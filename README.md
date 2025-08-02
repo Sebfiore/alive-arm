@@ -27,7 +27,7 @@ The Alive Arm Project is a mechatronic simulation platform that combines physics
 ## Current Focus / Milestones
 
 - [x] Design and animate the robotic arm  
-- [*] Define and implement the first training scenario (stand-up task)  
+- [x] Define and implement the first training scenario (stand-up task)  
 - [ ] Train and validate standing behavior  
 - [ ] Extend learned policy toward balance and locomotion  
 
