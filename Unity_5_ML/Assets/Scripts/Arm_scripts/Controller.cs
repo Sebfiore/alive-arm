@@ -1,3 +1,5 @@
+//disattivare nel caso di utilizzo con ML agents !!
+
 using UnityEngine;
 using System.Collections.Generic; // Required for lists
 
@@ -10,7 +12,6 @@ public class ArticulationBodyController : MonoBehaviour
     // Optional:  If you want to control the root
     [Tooltip("Optional: Articulation Body for the root of the robot.  This is usually Fixed, and you might not need to control it.")]
     public ArticulationBody rootArticulationBody;
-
 
     public bool set_mass = false;
     private float joint_mass = 10f;
