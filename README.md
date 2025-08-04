@@ -1,43 +1,35 @@
-# Alive Arm Project
+## Alive Arm Project
 
-## Overview
+This Unity project simulates a robotic arm that starts from a fallen position and learns to stand up using reinforcement learning powered by ML-Agents. The goal is to create lifelike, adaptive behavior where the arm can recover from the ground and eventually move autonomously.
 
-The Alive Arm Project is a mechatronic simulation platform that combines physics-based modeling, control, and reinforcement learning to enable a robotic arm to recover from a fallen pose and progressively acquire autonomous movement skills. Implemented in Unity with ML-Agents, it serves as a testbed for studying perception-action coupling, adaptive control, and curriculum learning in embodied agents.
+Initially, the goal is for the arm — with a fixed base — to reach a target height from a default home position.  
+Later, it will perform the same task starting from random poses, and eventually, the base will become movable.
 
-## Features
+### Visual Snippet
+![Alive Arm Training](images/image_1.png) 
 
-### Implemented
-- Fully modeled robotic arm with realistic kinematics and physics in Unity  
-- Simulation environment initialized from a fallen state  
-- Modular C# architecture separating environment, agent logic, and observation/action interfaces  
+Using prefabs, six learning agents are trained simultaneously. This setup works well as long as the time scale is moderate — avoid setting it too high (e.g., >15) to prevent instability.
 
-### Planned / In Progress
-- Reinforcement learning pipeline to teach the arm to stand up using ML-Agents  
-- Curriculum progression: **Stand → Balance → Move**  
-- Python-based training backend for policy optimization, reward shaping, and data logging  
-- Extensible Unity scenes and scenario definitions for future behaviors  
+### Key Features (Planned)
+- Robotic arm with realistic physics and a movable base
+- Reinforcement learning via ML-Agents (PPO)
+- Step-by-step learning pipeline: **Stand → Balance → Move**
+- Modular Unity scene and C# architecture for easy expansion
 
-## Technical Stack
+### Tech Stack
+- Unity Engine (60001.3f1)
+- ML-Agents Toolkit (3.0.0)
+- C# (for simulation logic)
+- Python (training backend)
 
-- **Unity Engine (2022+)** – simulation, physics, and agent hosting  
-- **ML-Agents Toolkit** – reinforcement learning framework (specify version)  
-- **C#** – environment and agent logic inside Unity  
-- **Python** – training orchestration, policy management, and telemetry  
+### How To
+- Activate the conda environment
+- Run: `mlagents-learn configs/arm_config.yaml --run-id=armx`
+- Press **Play** in the Unity Editor to begin simulation
 
-## Current Focus / Milestones
+### Project Status
+Early development – the arm simulation is complete, and the reinforcement learning pipeline is being set up and tuned.
 
-- [x] Design and animate the robotic arm  
-- [x] Define and implement the first training scenario (stand-up task)  
-- [ ] Train and validate standing behavior  
-- [ ] Extend learned policy toward balance and locomotion  
+### Credits
 
-## Project Status
-
-Early development: the simulation environment and robotic arm model are complete. The current effort is on defining the learning scenario and initiating the first reinforcement learning training to achieve reliable stand-up behavior.
-
-## Future Directions
-
-- Extend to balance and movement policies  
-- Introduce domain randomization for robustness  
-- Simulate sensor noise and environmental perturbations  
-- Instrument failure modes and visualize learned strategies  
+This project uses 3D models from [Preliy/Flange](https://github.com/Preliy/Flange), licensed under the MIT License.
