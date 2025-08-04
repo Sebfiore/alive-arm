@@ -244,8 +244,8 @@ ArticulationBody:
   m_SwingZ: 2
   m_Twist: 1
   m_XDrive:
-    lowerLimit: -105.86624
-    upperLimit: 180
+    lowerLimit: -105.415115
+    upperLimit: 49.025364
     stiffness: 0
     damping: 0
     forceLimit: 5e+37
@@ -304,7 +304,7 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Size: {x: 0.455844, y: 0.31568813, z: 0.50196207}
   m_Center: {x: -0.08638443, y: 2.22079, z: 0.06026107}
@@ -955,11 +955,12 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
   stiffness: 500
-  damping: 700
-  forceLimit: 700
+  damping: 250
+  forceLimit: 250
   lastJointHeight: 0
   joints: []
   HeightObject: {fileID: 7338069674370686688}
+  baseRenderer: {fileID: 0}
   targetHeight: 3.5
   rewardThreshold: 0.05
   maxSpeed: 90
@@ -1013,7 +1014,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a5c9d521e5ef4759a8246a07d52221e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DecisionPeriod: 100
+  DecisionPeriod: 250
   DecisionStep: 0
   TakeActionsBetweenDecisions: 1
 --- !u!1 &8740353956787209873
@@ -1134,7 +1135,7 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Size: {x: 1.4981579, y: 0.24382925, z: 0.38547328}
   m_Center: {x: -0.68503636, y: 2.2113369, z: 0.043526337}

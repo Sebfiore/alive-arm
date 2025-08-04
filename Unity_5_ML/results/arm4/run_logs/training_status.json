@@ -1,0 +1,29 @@
+{
+    "rise_behavior": {
+        "checkpoints": [
+            {
+                "steps": 110,
+                "file_path": "results/arm4/rise_behavior/rise_behavior-110.onnx",
+                "reward": 1379.9332702636718,
+                "creation_time": 1754301122.735452,
+                "auxillary_file_paths": [
+                    "results/arm4/rise_behavior/rise_behavior-110.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 110,
+            "file_path": "results/arm4/rise_behavior.onnx",
+            "reward": 1379.9332702636718,
+            "creation_time": 1754301122.735452,
+            "auxillary_file_paths": [
+                "results/arm4/rise_behavior/rise_behavior-110.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.1.1"
+    }
+}
