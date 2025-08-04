@@ -956,15 +956,17 @@ MonoBehaviour:
   MaxStep: 0
   stiffness: 500
   damping: 700
-  forceLimit: 500
+  forceLimit: 700
   lastJointHeight: 0
   joints: []
   HeightObject: {fileID: 7338069674370686688}
   targetHeight: 3.5
   rewardThreshold: 0.05
-  joint_1: 5
-  joint_2: 0
-  joint_3: 2
+  maxSpeed: 90
+  smoothTime: 0.3
+  joint_1: 0
+  joint_2: 30
+  joint_3: -63
   joint_4: 0
   joint_5: 0
   joint_6: 0
@@ -1011,7 +1013,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a5c9d521e5ef4759a8246a07d52221e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DecisionPeriod: 5
+  DecisionPeriod: 100
   DecisionStep: 0
   TakeActionsBetweenDecisions: 1
 --- !u!1 &8740353956787209873
