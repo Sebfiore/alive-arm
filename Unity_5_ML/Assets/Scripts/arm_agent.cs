@@ -43,42 +43,40 @@ public class arm_agent : Agent
 
     float[] homePosition = { 0f, 30f, -63f, 0f, 0f, 0f };
 
-    public override void Initialize()
+public override void Initialize()
+{
+    if (joints == null || joints.Count == 0)
     {
-        //Time.timeScale = 1f;
-
-        if (joints == null || joints.Count == 0)
+        joints = new List<ArticulationBody>();
+        foreach (var ab in GetComponentsInChildren<ArticulationBody>())
         {
-            joints = new List<ArticulationBody>();
-            foreach (var ab in GetComponentsInChildren<ArticulationBody>())
-            {
-                if (ab.jointType != ArticulationJointType.FixedJoint)
-                    joints.Add(ab);
-            }
+            if (ab.jointType != ArticulationJointType.FixedJoint)
+                joints.Add(ab);
         }
-
-        int n = joints.Count;
-        minLimits = new float[n];
-        maxLimits = new float[n];
-        currentTargets = new float[n];
-
-        for (int i = 0; i < n; i++)
-        {
-            minLimits[i] = joints[i].xDrive.lowerLimit;
-            maxLimits[i] = joints[i].xDrive.upperLimit;// popola i limiti min e max
-            currentTargets[i] = 0f; //initialize current targets
-
-            joints[i].mass = 0.5f;  // Set very low mass for each link, see if work better
-
-            var drive = joints[i].xDrive;
-            drive.stiffness = stiffness;
-            drive.damping = damping;
-            drive.forceLimit = forceLimit;
-            joints[i].xDrive = drive;
-        }
-
-        Debug.Log($"{gameObject.name} - Detected {n} joints");
     }
+
+    int n = joints.Count;
+    minLimits = new float[n];
+    maxLimits = new float[n];
+    currentTargets = new float[n];
+
+    for (int i = 0; i < n; i++)
+    {
+        minLimits[i] = joints[i].xDrive.lowerLimit;
+        maxLimits[i] = joints[i].xDrive.upperLimit;
+        currentTargets[i] = 0f;
+
+        joints[i].mass = 0.5f;
+
+        var drive = joints[i].xDrive;
+        drive.stiffness = stiffness;
+        drive.damping = damping;
+        drive.forceLimit = forceLimit;
+        joints[i].xDrive = drive;
+    }
+
+    Debug.Log($"{gameObject.name} - Detected {n} joints");
+}
 
     public override void OnEpisodeBegin()
     {
@@ -118,7 +116,14 @@ public class arm_agent : Agent
         sensor.AddObservation(lastJointHeight);
     }
 
-   public override void OnActionReceived(ActionBuffers actions)
+  // PID gains (global tuning)
+public float Kp = 100f;
+public float Kd = 10f;
+[Range(0f, 1f)] public float pidBlend = 0.7f; // 0 = solo RL, 1 = solo PID
+
+private float[] lastErrors;
+
+public override void OnActionReceived(ActionBuffers actions)
 {
     var control = actions.ContinuousActions;
 
@@ -127,48 +132,23 @@ public class arm_agent : Agent
         if (joints[i].jointType != ArticulationJointType.RevoluteJoint)
             continue;
 
-        // === Interpret action ===
+        // Action in [-1, 1] → target angle in [min, max]
         float normalized = Mathf.Clamp(control[i], -1f, 1f);
-        float desiredTarget = Mathf.Lerp(minLimits[i], maxLimits[i], (normalized + 1f) / 2f);
+        float targetAngle = Mathf.Lerp(minLimits[i], maxLimits[i], (normalized + 1f) / 2f);
 
-        // Delta step
-        float delta = desiredTarget - currentTargets[i];
-        delta = Mathf.Clamp(delta, -maxDeltaPerStep, maxDeltaPerStep);
-
-        // Apply with safety margin
-        float safetyMargin = 2f; // degrees
-        currentTargets[i] += delta;
-        currentTargets[i] = Mathf.Clamp(
+        // Smoothly move toward target using Unity’s built-in solver
+        currentTargets[i] = Mathf.MoveTowards(
             currentTargets[i],
-            minLimits[i] + safetyMargin,
-            maxLimits[i] - safetyMargin
+            targetAngle,
+            maxDeltaPerStep
         );
 
-        // === PD Controller ===
+        // Apply to articulation drive
         var drive = joints[i].xDrive;
-
-        float Kp = 20.0f;   // proportional gain (stiffness)
-        float Kd = 0.5f;   // derivative gain (damping)
-
-        float currentAngle = joints[i].jointPosition[0];   // current joint angle (radians)
-        float currentVel   = joints[i].jointVelocity[0];   // current joint velocity (radians/sec)
-
-        float error = currentTargets[i] - currentAngle;    // how far from target
-        float derivative = -currentVel;                    // oppose fast motion
-
-        float controlSignal = Kp * error + Kd * derivative;
-
-        // Convert control signal into new drive target
-        float newTarget = currentAngle + controlSignal * Time.fixedDeltaTime;
-
-        // Clamp new target safely
-        newTarget = Mathf.Clamp(
-            newTarget,
-            minLimits[i] + safetyMargin,
-            maxLimits[i] - safetyMargin
-        );
-
-        drive.target = newTarget;
+        drive.target = currentTargets[i];
+        drive.stiffness = stiffness;    // "spring" term
+        drive.damping   = damping;      // "damper" term
+        drive.forceLimit = forceLimit;  // max torque
         joints[i].xDrive = drive;
     }
 
@@ -177,34 +157,28 @@ public class arm_agent : Agent
     float heightReward = Mathf.Clamp01(currentHeight / targetHeight);
     AddReward(heightReward * 0.1f);
 
-    // Time + velocity penalties
-    AddReward(-0.001f);
-    foreach (var joint in joints)
-        AddReward(-0.001f * Mathf.Abs(joint.jointVelocity[0]));
-
-    // === Failure condition (RED) ===
+    // === Failure ===
     if (currentHeight < 0.5f)
     {
-        Debug.Log("FAILURE: Arm collapsed, turning base RED");
+        Debug.Log("FAILURE: Arm collapsed");
         SetReward(-1f);
-        if (baseRenderer != null)
-            baseRenderer.material.color = Color.red;
+        if (baseRenderer != null) baseRenderer.material.color = Color.red;
         EndEpisode();
         return;
     }
 
-    // === Success condition (GREEN) ===
+    // === Success ===
     if (currentHeight > targetHeight)
     {
-        Debug.Log("SUCCESS: Target reached, turning base GREEN");
+        Debug.Log("SUCCESS: Target reached");
         SetReward(+1f);
-        if (baseRenderer != null)
-            baseRenderer.material.color = Color.green;
+        if (baseRenderer != null) baseRenderer.material.color = Color.green;
         EndEpisode();
     }
 
     lastJointHeight = currentHeight;
 }
+
 
 
     
