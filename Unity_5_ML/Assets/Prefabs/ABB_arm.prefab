@@ -232,9 +232,9 @@ ArticulationBody:
   serializedVersion: 5
   m_Mass: 1
   m_ParentAnchorPosition: {x: -0.123173445, y: 2.0047019, z: -0.26159054}
-  m_ParentAnchorRotation: {x: -0.60116446, y: 0.3781961, z: 0.58847326, w: 0.38635242}
+  m_ParentAnchorRotation: {x: -0.71451485, y: -0.011392802, z: 0.6994306, w: -0.011638576}
   m_AnchorPosition: {x: -0.123173445, y: 2.0047019, z: -0.26159054}
-  m_AnchorRotation: {x: -0.60116446, y: 0.3781961, z: 0.58847326, w: 0.38635242}
+  m_AnchorRotation: {x: -0.71451485, y: -0.011392802, z: 0.6994306, w: -0.011638576}
   m_MatchAnchors: 1
   m_ArticulationJointType: 2
   m_LinearX: 2
@@ -244,8 +244,8 @@ ArticulationBody:
   m_SwingZ: 2
   m_Twist: 1
   m_XDrive:
-    lowerLimit: -105.415115
-    upperLimit: 49.025364
+    lowerLimit: -45.39146
+    upperLimit: 101.59462
     stiffness: 0
     damping: 0
     forceLimit: 5e+37
@@ -354,9 +354,9 @@ ArticulationBody:
   serializedVersion: 5
   m_Mass: 2
   m_ParentAnchorPosition: {x: -0.2913666, y: 0.8791961, z: -0.21135442}
-  m_ParentAnchorRotation: {x: -0.70397353, y: 0.066493094, z: 0.7039735, w: 0.066493094}
+  m_ParentAnchorRotation: {x: -0.43736708, y: 0.61767316, z: 0.41575462, w: 0.5043196}
   m_AnchorPosition: {x: -0.2913666, y: 0.8791961, z: -0.21135442}
-  m_AnchorRotation: {x: -0.70397353, y: 0.066493094, z: 0.7039735, w: 0.066493094}
+  m_AnchorRotation: {x: -0.43736708, y: 0.61767316, z: 0.41575462, w: 0.5043196}
   m_MatchAnchors: 1
   m_ArticulationJointType: 2
   m_LinearX: 2
@@ -366,8 +366,8 @@ ArticulationBody:
   m_SwingZ: 2
   m_Twist: 1
   m_XDrive:
-    lowerLimit: -98.748726
-    upperLimit: 157.79318
+    lowerLimit: -112.2551
+    upperLimit: 73.92523
     stiffness: 0
     damping: 0
     forceLimit: 5e+37
@@ -573,7 +573,7 @@ ArticulationBody:
   m_SwingZ: 2
   m_Twist: 1
   m_XDrive:
-    lowerLimit: -169.2033
+    lowerLimit: -180
     upperLimit: 180
     stiffness: 0
     damping: 0
@@ -739,7 +739,7 @@ ArticulationBody:
   m_Twist: 1
   m_XDrive:
     lowerLimit: -153.88808
-    upperLimit: 149.64679
+    upperLimit: 149.99567
     stiffness: 0
     damping: 0
     forceLimit: 5e+37
@@ -962,9 +962,9 @@ MonoBehaviour:
   HeightObject: {fileID: 7338069674370686688}
   baseRenderer: {fileID: 0}
   targetHeight: 3.5
-  rewardThreshold: 0.05
+  maxExpectedHeight: 3
   maxSpeed: 90
-  smoothTime: 0.3
+  maxDeltaPerStep: 5
   joint_1: 0
   joint_2: 30
   joint_3: -63
@@ -993,7 +993,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 1
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: 8af2e99310b4c42248e7aa2fd48395bf, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 0
   m_BehaviorName: rise_behavior
@@ -1014,7 +1014,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a5c9d521e5ef4759a8246a07d52221e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DecisionPeriod: 250
+  DecisionPeriod: 100
   DecisionStep: 0
   TakeActionsBetweenDecisions: 1
 --- !u!1 &8740353956787209873

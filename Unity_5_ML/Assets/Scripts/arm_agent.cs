@@ -3,13 +3,14 @@ using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Actuators;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 public class arm_agent : Agent
 {
     [Header("Arm settings, to be applied to all joints")]
-    public float stiffness = 10000f;
-    public float damping = 2000f;
-    public float forceLimit = 1000f;
+    public float stiffness = 0f; //10000f;
+    public float damping = 0f; // 2000f;
+    public float forceLimit = 0f; // 1000f;
 
     [Header("Arm status, only read")]
     [SerializeField]
@@ -21,12 +22,12 @@ public class arm_agent : Agent
     public Renderer baseRenderer;
 
     [Header("Training Settings")]
-    public float targetHeight = 2.0f;
-    public float maxExpectedHeight = 3.0f;
+    public float targetHeight = 0.0f;//set in inspector
+    //public float maxExpectedHeight = 0.0f;
 
     [Header("Movement Settings")]
-    public float maxSpeed = 90f;
-    public float maxDeltaPerStep = 5f;
+    public float maxSpeed = 0f; // 90f;
+    public float maxDeltaPerStep = 0f; // 5f;
 
     [Header("Joints position, used in heuristic mode")]
     [Range(-180f, 180f)] public float joint_1 = 0.0f;
@@ -44,7 +45,7 @@ public class arm_agent : Agent
 
     public override void Initialize()
     {
-        Time.timeScale = 1f;
+        //Time.timeScale = 1f;
 
         if (joints == null || joints.Count == 0)
         {
@@ -64,10 +65,10 @@ public class arm_agent : Agent
         for (int i = 0; i < n; i++)
         {
             minLimits[i] = joints[i].xDrive.lowerLimit;
-            maxLimits[i] = joints[i].xDrive.upperLimit;
-            currentTargets[i] = 0f;
+            maxLimits[i] = joints[i].xDrive.upperLimit;// popola i limiti min e max
+            currentTargets[i] = 0f; //initialize current targets
 
-            joints[i].mass = 0.01f;  // Set very low mass for each link, see if work better
+            joints[i].mass = 0.5f;  // Set very low mass for each link, see if work better
 
             var drive = joints[i].xDrive;
             drive.stiffness = stiffness;
@@ -81,14 +82,14 @@ public class arm_agent : Agent
 
     public override void OnEpisodeBegin()
     {
-        if (baseRenderer != null)
-            baseRenderer.material.color = Color.white;
+        //if (baseRenderer != null)
+        //    baseRenderer.material.color = Color.white;
 
         for (int i = 0; i < joints.Count; i++)
         {
             float homePos = (i < homePosition.Length) ? homePosition[i] : 0f;
             homePos = Mathf.Clamp(homePos, minLimits[i], maxLimits[i]);
-            currentTargets[i] = homePos;
+            currentTargets[i] = homePos;        // current target is set to home position, i will be able to use it in heuristic mode
 
             var drive = joints[i].xDrive;
             drive.target = homePos;
@@ -117,57 +118,149 @@ public class arm_agent : Agent
         sensor.AddObservation(lastJointHeight);
     }
 
-    public override void OnActionReceived(ActionBuffers actions)
+   public override void OnActionReceived(ActionBuffers actions)
+{
+    var control = actions.ContinuousActions;
+
+    for (int i = 0; i < joints.Count; i++)
     {
-        var control = actions.ContinuousActions;
+        if (joints[i].jointType != ArticulationJointType.RevoluteJoint)
+            continue;
 
-        for (int i = 0; i < joints.Count; i++)
-        {
-            if (joints[i].jointType != ArticulationJointType.RevoluteJoint)
-                continue;
+        // === Interpret action ===
+        float normalized = Mathf.Clamp(control[i], -1f, 1f);
+        float desiredTarget = Mathf.Lerp(minLimits[i], maxLimits[i], (normalized + 1f) / 2f);
 
-            float normalized = Mathf.Clamp(control[i], -1f, 1f);
-            float desiredTarget = Mathf.Lerp(minLimits[i], maxLimits[i], (normalized + 1f) / 2f);
+        // Delta step
+        float delta = desiredTarget - currentTargets[i];
+        delta = Mathf.Clamp(delta, -maxDeltaPerStep, maxDeltaPerStep);
 
-            float delta = desiredTarget - currentTargets[i];
-            delta = Mathf.Clamp(delta, -maxDeltaPerStep, maxDeltaPerStep);
+        // Apply with safety margin
+        float safetyMargin = 2f; // degrees
+        currentTargets[i] += delta;
+        currentTargets[i] = Mathf.Clamp(
+            currentTargets[i],
+            minLimits[i] + safetyMargin,
+            maxLimits[i] - safetyMargin
+        );
 
-            currentTargets[i] += delta;
-            currentTargets[i] = Mathf.Clamp(currentTargets[i], minLimits[i], maxLimits[i]);
+        // === PD Controller ===
+        var drive = joints[i].xDrive;
 
-            var drive = joints[i].xDrive;
-            drive.target = currentTargets[i];
-            joints[i].xDrive = drive;
-        }
+        float Kp = 20.0f;   // proportional gain (stiffness)
+        float Kd = 0.5f;   // derivative gain (damping)
 
-        float currentHeight = HeightObject.transform.position.y;
-        float heightReward = Mathf.Clamp01(currentHeight / maxExpectedHeight);
-        AddReward(heightReward);
+        float currentAngle = joints[i].jointPosition[0];   // current joint angle (radians)
+        float currentVel   = joints[i].jointVelocity[0];   // current joint velocity (radians/sec)
 
-        // Penalties
-        AddReward(-0.001f); // time penalty
-        foreach (var joint in joints)
-            AddReward(-0.001f * Mathf.Abs(joint.jointVelocity[0]));
+        float error = currentTargets[i] - currentAngle;    // how far from target
+        float derivative = -currentVel;                    // oppose fast motion
 
-        // Failure condition
-        if (currentHeight < 0.1f)
-        {
-            SetReward(-1f);
-            if (baseRenderer != null) baseRenderer.material.color = Color.red;
-            EndEpisode();
-            return;
-        }
+        float controlSignal = Kp * error + Kd * derivative;
 
-        // Success condition
-        if (currentHeight > targetHeight)
-        {
-            SetReward(1f);
-            if (baseRenderer != null) baseRenderer.material.color = Color.green;
-            EndEpisode();
-        }
+        // Convert control signal into new drive target
+        float newTarget = currentAngle + controlSignal * Time.fixedDeltaTime;
 
-        lastJointHeight = currentHeight;
+        // Clamp new target safely
+        newTarget = Mathf.Clamp(
+            newTarget,
+            minLimits[i] + safetyMargin,
+            maxLimits[i] - safetyMargin
+        );
+
+        drive.target = newTarget;
+        joints[i].xDrive = drive;
     }
+
+    // === Rewards ===
+    float currentHeight = HeightObject.transform.position.y;
+    float heightReward = Mathf.Clamp01(currentHeight / targetHeight);
+    AddReward(heightReward * 0.1f);
+
+    // Time + velocity penalties
+    AddReward(-0.001f);
+    foreach (var joint in joints)
+        AddReward(-0.001f * Mathf.Abs(joint.jointVelocity[0]));
+
+    // === Failure condition (RED) ===
+    if (currentHeight < 0.5f)
+    {
+        Debug.Log("FAILURE: Arm collapsed, turning base RED");
+        SetReward(-1f);
+        if (baseRenderer != null)
+            baseRenderer.material.color = Color.red;
+        EndEpisode();
+        return;
+    }
+
+    // === Success condition (GREEN) ===
+    if (currentHeight > targetHeight)
+    {
+        Debug.Log("SUCCESS: Target reached, turning base GREEN");
+        SetReward(+1f);
+        if (baseRenderer != null)
+            baseRenderer.material.color = Color.green;
+        EndEpisode();
+    }
+
+    lastJointHeight = currentHeight;
+}
+
+
+    
+
+    //testing a delta movement control
+/*     public override void OnActionReceived(ActionBuffers actions)
+{
+    var control = actions.ContinuousActions;        // control is a vector of size joints.Count, each value in [-1, 1], 6 elements in total
+
+    for (int i = 0; i < joints.Count; i++)
+    {
+        if (joints[i].jointType != ArticulationJointType.RevoluteJoint)
+            continue;
+
+        // Action is in [-1, 1], scale to delta change in degrees
+        float delta = control[i] * maxDeltaPerStep;  
+
+        // Update current target by delta
+        currentTargets[i] += delta;
+        currentTargets[i] = Mathf.Clamp(currentTargets[i], minLimits[i], maxLimits[i]);
+
+        // Apply to articulation drive
+        var drive = joints[i].xDrive;
+        drive.target = currentTargets[i];
+        joints[i].xDrive = drive;
+    }
+
+    // === Rewards ===
+    float currentHeight = HeightObject.transform.position.y;
+
+    // Dense shaping reward: ratio of current height to target height
+    float heightReward = Mathf.Clamp01(currentHeight / targetHeight);
+    AddReward(heightReward * 0.1f); // scale factor to balance with other terms
+
+    // Small penalties
+    AddReward(-0.0005f); // time penalty
+
+    // Failure condition
+    if (currentHeight < 0.1f)
+    {
+        SetReward(-1f);
+        if (baseRenderer != null) baseRenderer.material.color = Color.red;
+        EndEpisode();
+        return;
+    }
+
+    // Success condition
+    if (currentHeight > targetHeight)
+    {
+        SetReward(+1f);
+        if (baseRenderer != null) baseRenderer.material.color = Color.green;
+        EndEpisode();
+    }
+
+    lastJointHeight = currentHeight;
+} */
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {

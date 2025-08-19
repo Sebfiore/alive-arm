@@ -89,6 +89,10 @@ PrefabInstance:
       propertyPath: m_ParentAnchorPosition.z
       value: -0.006037712
       objectReference: {fileID: 0}
+    - target: {fileID: 3659395777561349820, guid: 2c0d35886ea14424189d7db3a1eefca0, type: 3}
+      propertyPath: DecisionPeriod
+      value: 90
+      objectReference: {fileID: 0}
     - target: {fileID: 3794737853092822769, guid: 2c0d35886ea14424189d7db3a1eefca0, type: 3}
       propertyPath: m_Name
       value: ABB_arm
